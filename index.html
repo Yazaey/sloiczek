@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Słoik powodów</title>
+    <style>
+        :root {
+            --bg-color: #ffe4e1;
+            --text-color: #333;
+            --button-bg: #ff6f61;
+            --button-hover: #e55a4d;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .personal-message {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .jar {
+            width: 200px;
+            height: 300px;
+            margin: 20px auto;
+            background: url('https://cdn-icons-png.flaticon.com/128/1206/1206283.png') no-repeat center/contain;
+            cursor: pointer;
+            position: relative;
+        }
+        .note {
+            width: 150px;
+            height: 80px;
+            background-color: #ffebcd;
+            border: 1px solid #d3a625;
+            border-radius: 5px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1em;
+            font-weight: bold;
+            color: var(--text-color);
+            animation: drop-out 1.5s forwards;
+        }
+        @keyframes drop-out {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -100%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -200%) scale(1);
+                opacity: 1;
+            }
+        }
+        .button-group {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: var(--button-bg);
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: var(--button-hover);
+        }
+        .reason-list {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 600px;
+            margin: 20px auto;
+            display: none;
+        }
+        .reason-list p {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 1em;
+            font-weight: normal;
+            color: var(--text-color);
+        }
+        .reason-list p small {
+            font-size: 0.85em;
+            color: #666;
+        }
+        .reason-list button {
+            font-size: 0.85em;
+            padding: 8px 12px;
+            background-color: #87cefa;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .reason-list button:hover {
+            background-color: #4682b4;
+            transform: scale(1.05);
+        }
+        .reason-list button:active {
+            background-color: #5a9ecb;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Słoik powodów</h1>
+    <div class="personal-message">
+        Dla mojego dziubaska <strong>Aurelki</strong>. Każdy powód przypomina, jak bardzo Cię kocham!
+    </div>
+    <div class="jar" onclick="drawReason()">
+        <div class="note" id="note"></div>
+    </div>
+    <div class="button-group">
+        <button onclick="toggleReasonList()">Pokaż wszystkie powody</button>
+        <button onclick="addReason()">Dodaj nowy powód</button>
+    </div>
+    <div class="reason-list" id="reason-list"></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCG-xBnWWwD7Vwsv1irpVZfv0FlDTKkvg4",
+            authDomain: "sloiczek-pwodow.firebaseapp.com",
+            databaseURL: "https://sloiczek-pwodow-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "sloiczek-pwodow",
+            storageBucket: "sloiczek-pwodow.firebasestorage.app",
+            messagingSenderId: "863701790227",
+            appId: "1:863701790227:web:4589db76864d9b6f0259e6"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let showReasonList = false;
+
+        // Function to load reasons
+        function loadReasons() {
+            const reasonsRef = db.ref('reasons');
+            reasonsRef.on('value', (snapshot) => {
+                const reasons = snapshot.val();
+                const reasonListContainer = document.getElementById('reason-list');
+                reasonListContainer.innerHTML = Object.entries(reasons || {})
+                    .map(([id, reason]) => `
+                        <p>
+                            ${reason.text} <small>- Dodano przez: ${reason.addedBy}</small>
+                            <button onclick="editReason('${id}', '${reason.text}', '${reason.addedBy}')">Edytuj</button>
+                        </p>
+                    `)
+                    .join('');
+            });
+        }
+
+        // Function to toggle the visibility of the reason list
+        function toggleReasonList() {
+            showReasonList = !showReasonList;
+            const reasonListContainer = document.getElementById('reason-list');
+            if (showReasonList) {
+                reasonListContainer.style.display = 'block';
+                loadReasons();
+            } else {
+                reasonListContainer.style.display = 'none';
+            }
+        }
+
+        // Function to draw a random reason
+        function drawReason() {
+            const reasonsRef = db.ref('reasons');
+            reasonsRef.once('value', (snapshot) => {
+                const reasons = Object.values(snapshot.val() || {});
+                const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+                const note = document.getElementById('note');
+                if (randomReason) {
+                    note.textContent = randomReason.text;
+                    note.style.display = 'flex';
+                    setTimeout(() => {
+                        note.style.display = 'none';
+                    }, 3000);
+                }
+            });
+        }
+
+        // Function to add a new reason
+        function addReason() {
+            const newReasonText = prompt("Podaj nowy powód:");
+            const addedBy = prompt("Kto dodał ten powód?");
+            if (newReasonText && addedBy) {
+                const reasonsRef = db.ref('reasons');
+                reasonsRef.push({ text: newReasonText, addedBy })
+                    .then(() => {
+                        alert("Nowy powód został dodany!");
+                    })
+                    .catch((error) => {
+                        console.error("Błąd podczas zapisywania powodu:", error);
+                        alert("Wystąpił błąd podczas zapisywania powodu.");
+                    });
+            }
+        }
+
+        // Function to edit an existing reason
+        function editReason(id, currentText, currentAddedBy) {
+            const newText = prompt("Edytuj powód:", currentText);
+            const newAddedBy = prompt("Edytuj osobę, która dodała:", currentAddedBy);
+            if (newText && newAddedBy) {
+                const reasonRef = db.ref(`reasons/${id}`);
+                reasonRef.update({ text: newText, addedBy: newAddedBy })
+                    .then(() => {
+                        alert("Powód został zaktualizowany!");
+                    })
+                    .catch((error) => {
+                        console.error("Błąd podczas edycji powodu:", error);
+                        alert("Wystąpił błąd podczas edycji powodu.");
+                    });
+            }
+        }
+
+        // Load reasons when the page loads
+        window.onload = () => {
+            // Powody będą ładowane tylko po kliknięciu przycisku
+        };
+    </script>
+</body>
+</html>
