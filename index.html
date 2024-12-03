@@ -33,6 +33,16 @@
             cursor: pointer;
             position: relative;
         }
+        .jar.shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
         .note {
             width: 150px;
             height: 80px;
@@ -133,7 +143,7 @@
     <div class="personal-message">
         Dla mojego dziubaska <strong>Aurelki</strong>. Każdy powód przypomina, jak bardzo Cię kocham!
     </div>
-    <div class="jar" onclick="drawReason()">
+    <div class="jar" onclick="shakeJar(); drawReason()">
         <div class="note" id="note"></div>
     </div>
     <div class="button-group">
@@ -142,12 +152,10 @@
     </div>
     <div class="reason-list" id="reason-list"></div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCG-xBnWWwD7Vwsv1irpVZfv0FlDTKkvg4",
             authDomain: "sloiczek-pwodow.firebaseapp.com",
@@ -158,13 +166,11 @@
             appId: "1:863701790227:web:4589db76864d9b6f0259e6"
         };
 
-        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let showReasonList = false;
 
-        // Function to load reasons
         function loadReasons() {
             const reasonsRef = db.ref('reasons');
             reasonsRef.on('value', (snapshot) => {
@@ -181,7 +187,6 @@
             });
         }
 
-        // Function to toggle the visibility of the reason list
         function toggleReasonList() {
             showReasonList = !showReasonList;
             const reasonListContainer = document.getElementById('reason-list');
@@ -193,7 +198,6 @@
             }
         }
 
-        // Function to draw a random reason
         function drawReason() {
             const reasonsRef = db.ref('reasons');
             reasonsRef.once('value', (snapshot) => {
@@ -205,12 +209,11 @@
                     note.style.display = 'flex';
                     setTimeout(() => {
                         note.style.display = 'none';
-                    }, 3000);
+                    }, 4500);
                 }
             });
         }
 
-        // Function to add a new reason
         function addReason() {
             const newReasonText = prompt("Podaj nowy powód:");
             const addedBy = prompt("Kto dodał ten powód?");
@@ -227,7 +230,6 @@
             }
         }
 
-        // Function to edit an existing reason
         function editReason(id, currentText, currentAddedBy) {
             const newText = prompt("Edytuj powód:", currentText);
             const newAddedBy = prompt("Edytuj osobę, która dodała:", currentAddedBy);
@@ -244,10 +246,13 @@
             }
         }
 
-        // Load reasons when the page loads
-        window.onload = () => {
-            // Powody będą ładowane tylko po kliknięciu przycisku
-        };
+        function shakeJar() {
+            const jar = document.querySelector('.jar');
+            jar.classList.add('shake');
+            setTimeout(() => {
+                jar.classList.remove('shake');
+            }, 500);
+        }
     </script>
 </body>
 </html>
